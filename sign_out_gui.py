@@ -1,33 +1,34 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-# Load the Excel file
-file_path = 'Copy of library books log 10TH MARCH 2.xlsx'
-df = pd.read_excel(file_path)
 
-# Streamlit app title
 st.title('Library Book Sign-Out System')
 
-# Input for ISBN
-isbn_input = st.text_input('Enter ISBN to sign out a book:')
+# Upload Excel file
+uploaded_file = st.file_uploader("Upload the library log Excel file", type=["xlsx"])
 
-if isbn_input:
-    # Check if ISBN exists in the dataframe
-    if isbn_input in df['ISBN NUMBER'].values:
-        # Get the current date
-        borrow_date = datetime.now().date()
-        return_date = borrow_date + timedelta(days=14)
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
 
-        # Update the dataframe
-        df.loc[df['ISBN NUMBER'] == isbn_input, 'Date Borrowed'] = borrow_date
-        df.loc[df['ISBN NUMBER'] == isbn_input, 'Return By'] = return_date
+    # Input for ISBN
+    isbn_input = st.text_input('Enter ISBN to sign out a book:')
 
-        # Save the updated dataframe back to the Excel file
-        df.to_excel(file_path, index=False)
+    if isbn_input:
+        if isbn_input in df['ISBN NUMBER'].values:
+            borrow_date = datetime.now().date()
+            return_date = borrow_date + timedelta(days=14)
 
-        # Display confirmation message
-        st.success(f'Book with ISBN {isbn_input} signed out successfully!')
-        st.write(f'Date Borrowed: {borrow_date}')
-        st.write(f'Return By: {return_date}')
-    else:
-        st.error('ISBN not found in the library records.')
+            df.loc[df['ISBN NUMBER'] == isbn_input, 'Date Borrowed'] = borrow_date
+            df.loc[df['ISBN NUMBER'] == isbn_input, 'Return By'] = return_date
+
+            # Display confirmation
+            st.success(f'Book with ISBN {isbn_input} signed out successfully!')
+            st.write(f'Date Borrowed: {borrow_date}')
+            st.write(f'Return By: {return_date}')
+
+            # Provide download button for updated file
+            st.download_button(
+                label="Download updated log",
+                data=df.to_excel(index=False, engine='openpyxl'),
+                file_name="LibraryBooks.xlsx",
+                mime="application
