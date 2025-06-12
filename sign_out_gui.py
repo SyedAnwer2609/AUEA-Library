@@ -1,7 +1,8 @@
 import streamlit as st
-from streamlit_msal import Msal
 import pandas as pd
 from datetime import datetime, timedelta
+from io import BytesIO
+from streamlit_msal import Msal
 
 # Azure Entra ID config
 client_id = "7937bad2-44a4-4f3c-9574-52c303300c74"
@@ -47,9 +48,14 @@ if uploaded_file:
             st.write(f'Date Borrowed: {borrow_date}')
             st.write(f'Return By: {return_date}')
 
+            # Convert DataFrame to Excel in memory
+            output = BytesIO()
+            df.to_excel(output, index=False, engine='openpyxl')
+            output.seek(0)
+
             st.download_button(
                 label="Download updated log",
-                data=df.to_excel(index=False, engine='openpyxl'),
+                data=output,
                 file_name="LibraryBooks.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
