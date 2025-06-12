@@ -1,8 +1,6 @@
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-
 # Load the Excel file
 file_path = 'Copy of library books log 10TH MARCH 2.xlsx'
 df = pd.read_excel(file_path)
