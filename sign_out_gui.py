@@ -1,63 +1,43 @@
+import requests
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
-from io import BytesIO
-from streamlit_msal import Msal
 
-# Azure Entra ID config
-client_id = "7937bad2-44a4-4f3c-9574-52c303300c74"
-authority = "https://login.microsoftonline.com/cd236fe6-adf6-481b-becd-f37fd7186558"
-scopes = ["User.Read"]
+# Azure AD App credentials
+TENANT_ID = 'cd236fe6-adf6-481b-becd-f37fd7186558'
+CLIENT_ID = '7937bad2-44a4-4f3c-9574-52c303300c74'
+CLIENT_SECRET = 'your-client-secret'
 
-# Authenticate user
-with st.sidebar:
-    auth_data = Msal.initialize_ui(
-        client_id=client_id,
-        authority=authority,
-        scopes=scopes
-    )
+# Get access token
+def get_access_token():
+    url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
+    data = {
+        'grant_type': 'client_credentials',
+        'client_id': zJK8Q~k_XLP5gj5IpRm3Y54sucVi844sy5O3za8z,
+        'client_secret': 35094de8-bce3-40f7-8e54-bba43b136cb0,
+        'scope': 'https://graph.microsoft.com/.default'
+    }
+    r = requests.post(url, data=data)
+    return r.json().get('access_token')
 
-if not auth_data:
-    st.warning("Please sign in to access the system.")
-    st.stop()
+# Search users by name
+def search_users(first_name, last_name, token):
+    url = f"https://graph.microsoft.com/v1.0/users?$filter=startswith(givenName,'{first_name}') and startswith(surname,'{last_name}')"
+    headers = {'Authorization': f'Bearer {token}'}
+    r = requests.get(url, headers=headers)
+    return r.json().get('value', [])
 
-user_name = auth_data["account"]["name"]
-user_email = auth_data["account"]["username"]
+# Streamlit UI
+st.title("Azure Entra ID Book Assignment")
 
-st.title(f"Welcome, {user_name}!")
+isbn = st.text_input("Enter ISBN")
+first_name = st.text_input("User First Name")
+last_name = st.text_input("User Last Name")
 
-# Upload Excel file
-uploaded_file = st.file_uploader("Upload the library log Excel file", type=["xlsx"])
-
-if uploaded_file:
-    df = pd.read_excel(uploaded_file)
-
-    isbn_input = st.text_input('Enter ISBN to sign out a book:')
-
-    if isbn_input:
-        if isbn_input in df['ISBN NUMBER'].values:
-            borrow_date = datetime.now().date()
-            return_date = borrow_date + timedelta(days=14)
-
-            df.loc[df['ISBN NUMBER'] == isbn_input, 'Date Borrowed'] = borrow_date
-            df.loc[df['ISBN NUMBER'] == isbn_input, 'Return By'] = return_date
-            df.loc[df['ISBN NUMBER'] == isbn_input, 'Borrowed By'] = user_name
-            df.loc[df['ISBN NUMBER'] == isbn_input, 'Borrower Email'] = user_email
-
-            st.success(f'Book with ISBN {isbn_input} signed out successfully!')
-            st.write(f'Date Borrowed: {borrow_date}')
-            st.write(f'Return By: {return_date}')
-
-            # Convert DataFrame to Excel in memory
-            output = BytesIO()
-            df.to_excel(output, index=False, engine='openpyxl')
-            output.seek(0)
-
-            st.download_button(
-                label="Download updated log",
-                data=output,
-                file_name="LibraryBooks.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        else:
-            st.error('ISBN not found in the library records.')
+if st.button("Search User"):
+    token = get_access_token()
+    users = search_users(first_name, last_name, token)
+    if users:
+        for user in users:
+            st.write(f"{user['displayName']} - {user.get('mail', 'No email')}")
+    else:
+        st.write("No users found.")
