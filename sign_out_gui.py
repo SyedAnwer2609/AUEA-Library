@@ -31,4 +31,7 @@ if uploaded_file:
                 label="Download updated log",
                 data=df.to_excel(index=False, engine='openpyxl'),
                 file_name="LibraryBooks.xlsx",
-                mime="application
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        else:
+            st.error('ISBN not found in the library records.')
